@@ -163,7 +163,7 @@ func (l *redisLimiter) allowN(key string, n int, rate float64, burst int) bool {
 	if len(resp) == 0 {
 		// truncate to rate limit on configured interval
 		now := time.Now().Truncate(l.interval).Unix()
-		_, err := redis.Int(c.Do("LPUSH", key, float64(burst-1), now))
+		_, err := redis.Int(c.Do("LPUSH", key, now, float64(burst-1)))
 		if err != nil {
 			// fail open on redis error
 			return l.failOpen

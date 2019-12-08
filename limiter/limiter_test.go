@@ -84,11 +84,13 @@ func TestRedisAllowNoKey(t *testing.T) {
 			if args[0].(string) != key {
 				return false
 			}
-			if args[1].(float64) != float64(l.burst-1) {
+			if _, ok := args[1].(int64); !ok {
 				return false
 			}
-			_, ok := args[2].(int64)
-			return ok
+			if args[2].(float64) != float64(l.burst-1) {
+				return false
+			}
+			return true
 		}),
 	).Return(int64(2), nil).Once()
 
@@ -184,11 +186,13 @@ func TestRedisLPushError(t *testing.T) {
 			if args[0].(string) != key {
 				return false
 			}
-			if args[1].(float64) != float64(l.burst-1) {
+			if _, ok := args[1].(int64); !ok {
 				return false
 			}
-			_, ok := args[2].(int64)
-			return ok
+			if args[2].(float64) != float64(l.burst-1) {
+				return false
+			}
+			return true
 		}),
 	).Return(int64(0), errors.New("not good")).Once()
 
