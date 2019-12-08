@@ -33,6 +33,12 @@ type Limiter interface {
 	// AllowNDynamic returns true if the given number of events may happen for
 	// the given ID taking into consideration the given rate and burst limits
 	AllowNDynamic(id string, n int, rate float64, burst int) bool
+
+	// Rate returns the default rate limit
+	Rate() float64
+
+	// Burst returns the default burst limit
+	Burst() int
 }
 
 // Config defines a struct passed to New to configure a Limiter
@@ -175,8 +181,8 @@ func (l *redisLimiter) allowN(key string, n int, rate float64, burst int) bool {
 	// calculate how many tokens to add to the bucket
 	// token allotment is the number of intervals since the last update time
 	// multiplied by the rate limit
-	since := time.Since(time.Unix(last, 0).Truncate(l.interval))
-	allotment := float64(since/l.interval) * rate
+	since := time.Since(time.Unix(last, 0)).Truncate(l.interval)
+	allotment := float64(since*l.interval) * rate
 
 	// calculate how many tokens we have after allotment
 	// cannot have more than max bucket size tokens (burst)
@@ -204,6 +210,14 @@ func (l *redisLimiter) allowN(key string, n int, rate float64, burst int) bool {
 	}
 
 	return true
+}
+
+func (l *redisLimiter) Rate() float64 {
+	return l.rate
+}
+
+func (l *redisLimiter) Burst() int {
+	return l.burst
 }
 
 func (l *inMemoryLimiter) Allow(key string) bool {
@@ -251,6 +265,14 @@ func (l *inMemoryLimiter) allowN(key string, n int, ratelimit float64, burst int
 	return limiter.AllowN(now, n)
 }
 
+func (l *inMemoryLimiter) Rate() float64 {
+	return l.rate
+}
+
+func (l *inMemoryLimiter) Burst() int {
+	return l.burst
+}
+
 func (l *disabledLimiter) Allow(key string) bool {
 	return true
 }
@@ -265,4 +287,12 @@ func (l *disabledLimiter) AllowDynamic(key string, rate float64, burst int) bool
 
 func (l *disabledLimiter) AllowNDynamic(key string, n int, rate float64, burst int) bool {
 	return true
+}
+
+func (l *disabledLimiter) Rate() float64 {
+	return math.MaxFloat64
+}
+
+func (l *disabledLimiter) Burst() int {
+	return 0
 }
